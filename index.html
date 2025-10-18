@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A Transmission for You</title>
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Tailwind CSS for styling --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter --><link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -43,32 +41,51 @@
             height: 4px;
             background: #22d3ee; /* cyan-400 */
             box-shadow: 0 0 15px #22d3ee, 0 0 25px #22d3ee, 0 0 40px #fff;
-            animation: scan-animation 5s ease-in-out; /* Increased duration to 5s */
+            animation: scan-animation 5s ease-in-out;
+        }
+
+        /* -- Sparkling Stars Background -- */
+        .star-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through to elements beneath if needed */
+            z-index: 0; /* Ensure stars are behind content */
+            overflow: hidden; /* Prevent stars from going outside viewport */
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0; /* Starts hidden */
+            animation: twinkle 4s infinite ease-in-out;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+            pointer-events: auto; /* Make the star clickable */
+            cursor: pointer;
+            transition: transform 0.1s ease-out; /* For hover effect */
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 1);
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1); }
+            75% { opacity: 0.7; transform: scale(0.8); }
         }
     </style>
 </head>
 <body class="bg-gray-900 bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white min-h-screen flex items-center justify-center p-4 overflow-hidden">
-    <!-- Subtle grid background SVG -->
-    <div class="absolute inset-0 z-0 opacity-20">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern id="smallGrid" width="8" height="8" patternUnits="userSpaceOnUse">
-                    <path d="M 8 0 L 0 0 0 8" fill="none" stroke="rgba(55, 65, 81, 0.5)" stroke-width="0.5"/>
-                </pattern>
-                <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
-                    <rect width="80" height="80" fill="url(#smallGrid)"/>
-                    <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(55, 65, 81, 0.7)" stroke-width="1"/>
-                </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-    </div>
+    <!-- Sparkling Stars Background --><div class="star-container" id="starfield"></div>
 
-    <!-- Main Content Card -->
-    <main class="relative z-10 w-full max-w-lg mx-auto bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/20 ring-1 ring-cyan-400/20">
+    <!-- Main Content Card - Initially hidden --><main id="mainCard" class="relative z-10 w-full max-w-lg mx-auto bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl shadow-cyan-500/20 ring-1 ring-cyan-400/20 hidden content-fade-in">
         <div class="p-8 md:p-12 text-center">
-            <!-- Initial View Content -->
-            <div id="initialContent">
+            <!-- Initial View Content --><div id="initialContent">
                 <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">
                     Happy Birthday, Magnus!
                 </h1>
@@ -80,10 +97,8 @@
                 </button>
             </div>
 
-            <!-- Hidden Gift Content (Revealed on click) -->
-            <div id="giftContent" class="hidden content-fade-in">
-                <!-- SVG Icon: Stylized 'A' -->
-                <div class="w-20 h-20 mx-auto mb-6">
+            <!-- Hidden Gift Content (Revealed on click) --><div id="giftContent" class="hidden content-fade-in">
+                <!-- SVG Icon: Stylized 'A' --><div class="w-20 h-20 mx-auto mb-6">
                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-cyan-400">
                         <path d="M50 5 L95 95 H5 L50 5 Z M25 80 H75 L50 30 L25 80 Z" fill="currentColor"/>
                         <path d="M50 45 L65 75 H35 L50 45 Z" stroke="#083344" stroke-width="3"/>
@@ -105,47 +120,106 @@
         </div>
     </main>
     
-    <!-- Fullscreen scanner effect container -->
-    <div id="scanner" class="hidden fixed inset-0 flex items-center justify-center overflow-hidden z-20 bg-black/50 backdrop-blur-sm">
+    <!-- Fullscreen scanner effect container --><div id="scanner" class="hidden fixed inset-0 flex items-center justify-center overflow-hidden z-20 bg-black/50 backdrop-blur-sm">
         <div class="scanner-line"></div>
     </div>
 
-    <!-- JavaScript for Interactivity -->
-    <script>
-        // Get references to the DOM elements
+    <!-- JavaScript for Interactivity --><script>
+        const mainCard = document.getElementById('mainCard');
         const revealButton = document.getElementById('revealButton');
         const initialContent = document.getElementById('initialContent');
         const giftContent = document.getElementById('giftContent');
         const scanner = document.getElementById('scanner');
+        const starfield = document.getElementById('starfield');
+        let starClicked = false; // Flag to ensure the star is only clickable once
 
-        // Add a click event listener to the button
+        // --- Starfield Generation ---
+        function createStars(numStars = 70) {
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = star.style.height = `${Math.random() * 3 + 1}px`; // 1 to 4px
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * -4}s`; // Stagger animation start
+                star.style.animationDuration = `${Math.random() * 3 + 2}s`; // 2 to 5s
+                starfield.appendChild(star);
+            }
+        }
+        createStars();
+
+        // --- Hidden "Gift" Star ---
+        // Create one special star that triggers the card reveal
+        const giftStar = document.createElement('div');
+        // MODIFIED: Removed fixed size classes (!w-4 !h-4)
+        giftStar.className = 'star bg-cyan-400 !shadow-cyan-400/80'; 
+        
+        // MODIFIED: Set a random size within the standard range (1px to 4px) to match other stars
+        const randomSize = `${Math.random() * 3 + 1}px`; 
+        giftStar.style.width = giftStar.style.height = randomSize;
+        
+        giftStar.style.left = `${Math.random() * 80 + 10}%`; // Position it more centrally
+        giftStar.style.top = `${Math.random() * 80 + 10}%`;
+        giftStar.style.animation = 'none'; // Don't twinkle like others initially
+        giftStar.style.opacity = '1'; // Always visible (but still small)
+        giftStar.style.cursor = 'pointer';
+        giftStar.id = 'giftStar';
+        starfield.appendChild(giftStar);
+
+        // Add a subtle pulsating animation to the gift star
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes pulse-gift-star {
+                0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(34, 211, 238, 0.8); }
+                50% { transform: scale(1.3); box-shadow: 0 0 20px rgba(34, 211, 238, 1); }
+            }
+            #giftStar {
+                animation: pulse-gift-star 2s infinite ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+
+
+        // --- Event Listeners ---
+        giftStar.addEventListener('click', () => {
+            if (starClicked) return; // Prevent multiple clicks
+            starClicked = true;
+
+            // Remove the pulsing animation and make it disappear
+            giftStar.style.animation = 'none';
+            giftStar.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+            giftStar.style.opacity = '0';
+            giftStar.style.transform = 'scale(0)';
+            giftStar.style.pointerEvents = 'none'; // Make it unclickable
+
+            // Reveal the main card
+            mainCard.classList.remove('hidden');
+            setTimeout(() => {
+                // Remove the content-fade-in class's opacity 0 setting before setting it to 1
+                mainCard.style.opacity = '1'; // Trigger fade-in
+            }, 50); // Small delay to ensure transition is applied
+
+            // Stop other stars from being clickable after the gift is found
+            document.querySelectorAll('.star').forEach(star => {
+                star.style.pointerEvents = 'none';
+            });
+        });
+
         revealButton.addEventListener('click', () => {
-            // Disable the button to prevent multiple clicks
             revealButton.disabled = true;
-
-            // 1. Hide the initial content with a fade-out effect
             initialContent.style.transition = 'opacity 0.5s ease-out';
             initialContent.style.opacity = '0';
 
-            // After the fade-out, start the scanner animation
             setTimeout(() => {
                 initialContent.classList.add('hidden');
-
-                // 2. Show the scanner animation
                 scanner.classList.remove('hidden');
 
-                // After the scanner animation finishes (5 seconds), reveal the gift
                 setTimeout(() => {
-                    // 3. Hide the scanner
                     scanner.classList.add('hidden');
-
-                    // 4. Make the gift content visible but still transparent
                     giftContent.classList.remove('hidden');
-
-                    // 5. Trigger the fade-in effect for the gift content
                     setTimeout(() => {
                         giftContent.style.opacity = '1';
-                    }, 50); // A tiny delay ensures the browser picks up the transition
+                    }, 50);
                 }, 5000); // This timeout should match the new, longer scanner animation duration
 
             }, 500); // This timeout should match the initial content fade-out duration
@@ -153,4 +227,3 @@
     </script>
 </body>
 </html>
-
